@@ -10,6 +10,7 @@ import '../widgets/transaction_card.dart';
 import '../widgets/goals_section.dart';
 import '../widgets/mascot_feedback.dart';
 import '../widgets/achievements_widget.dart';
+import '../widgets/mascot_advice_dialog.dart'; // 👈 Aseguramos que está el import correcto
 import 'history_screen.dart';
 
 class HomeScreen extends StatelessWidget {
@@ -52,7 +53,7 @@ class HomeScreen extends StatelessWidget {
             onPressed: () {
               final name = nameController.text.trim();
               final amount = double.tryParse(amountController.text);
-              
+
               if (name.isNotEmpty && amount != null && amount > 0) {
                 context.read<WalletProvider>().addNewGoal(
                   name,
@@ -141,11 +142,19 @@ class HomeScreen extends StatelessWidget {
       body: SingleChildScrollView(
         child: Column(
           children: [
-            const SummaryCard(), 
+            // 👇 Hacemos que al tocar el resumen salga la mascota
+            GestureDetector(
+              onTap: () {
+                showDialog(
+                  context: context,
+                  builder: (context) => const MascotAdviceDialog(),
+                );
+              },
+              child: const SummaryCard(),
+            ),
             AchievementsWidget(),
             RecommendationsWidget(),
-          
-               Padding(
+            Padding(
               padding: const EdgeInsets.symmetric(horizontal: 16.0),
               child: Row(
                 children: [
@@ -171,8 +180,6 @@ class HomeScreen extends StatelessWidget {
             BalancePieChart(),
             MonthlyBarChart(),
             FullReportButton(),
-       
-            
             const MascotFeedback(),
           ],
         ),

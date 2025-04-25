@@ -33,6 +33,10 @@ class WalletProvider with ChangeNotifier {
     }
   }
 
+  String mascotMood = "normal"; // Puede ser 'normal', 'feliz', o 'triste'
+int _consecutiveExpenses = 0; // contador de gastos consecutivos
+
+
   void _initializeDefaultData() {
     _goals = [
       Goal(id: '1', name: 'Vacaciones', currentAmount: 10500, targetAmount: 15000, frequency: 'Mensual'),
@@ -105,36 +109,51 @@ class WalletProvider with ChangeNotifier {
   }
 
   Future<bool> addTransaction(String description, Transaction transaction) async {
-    bool isHighExpense = transaction.type == TransactionType.expense && transaction.amount >= 1000;
+  bool isHighExpense = transaction.type == TransactionType.expense && transaction.amount >= 1000;
 
-    final isGeneral = description != 'goal' && !description.startsWith('Meta:');
+  final isGeneral = description != 'goal' && !description.startsWith('Meta:');
 
-    final generalBalance = _transactions
-        .where((tx) => tx.description != 'goal' && !tx.description.startsWith('Meta:'))
-        .fold<double>(0, (sum, tx) {
-          if (tx.type == TransactionType.income) return sum + tx.amount;
-          if (tx.type == TransactionType.expense) return sum - tx.amount;
-          return sum;
-        });
+  final generalBalance = _transactions
+      .where((tx) => tx.description != 'goal' && !tx.description.startsWith('Meta:'))
+      .fold<double>(0, (sum, tx) {
+        if (tx.type == TransactionType.income) return sum + tx.amount;
+        if (tx.type == TransactionType.expense) return sum - tx.amount;
+        return sum;
+      });
 
-    if (transaction.type == TransactionType.expense && isGeneral && transaction.amount > generalBalance) {
-      return false;
-    }
-
-    final newTransaction = Transaction(
-      id: transaction.id,
-      amount: transaction.amount,
-      category: transaction.category,
-      date: transaction.date,
-      type: transaction.type,
-      description: description,
-    );
-
-    _transactions.add(newTransaction);
-    await _saveTransactions();
-    notifyListeners();
-    return isHighExpense;
+  if (transaction.type == TransactionType.expense && isGeneral && transaction.amount > generalBalance) {
+    return false;
   }
+
+  final newTransaction = Transaction(
+    id: transaction.id,
+    amount: transaction.amount,
+    category: transaction.category,
+    date: transaction.date,
+    type: transaction.type,
+    description: description,
+  );
+
+  _transactions.add(newTransaction);
+
+  // 👇 LOGICA NUEVA PARA MASCOTA
+  if (transaction.type == TransactionType.income) {
+    mascotMood = "feliz"; // Si hay ingreso, mascota feliz
+    _consecutiveExpenses = 0; // Reset contador de gastos
+  } else if (transaction.type == TransactionType.expense) {
+    _consecutiveExpenses++;
+    if (_consecutiveExpenses >= 3) {
+      mascotMood = "triste"; // Si hay 3 gastos seguidos, mascota triste
+    } else {
+      mascotMood = "normal"; // Si 1 o 2 gastos seguidos, normal
+    }
+  }
+
+  await _saveTransactions();
+  notifyListeners();
+  return isHighExpense;
+}
+
 
   Future<void> addToGoal(String goalId, double amount) async {
     final goalIndex = _goals.indexWhere((g) => g.id == goalId);
