@@ -1,10 +1,12 @@
 import 'package:flutter/material.dart';
+import '../widgets/recommendations_widget.dart';
 import 'package:provider/provider.dart';
 import '../providers/wallet_provider.dart';
 import '../widgets/summary_card.dart';
 import '../widgets/transaction_card.dart';
 import '../widgets/goals_section.dart';
 import '../widgets/mascot_feedback.dart';
+import '../widgets/achievements_widget.dart';
 import 'history_screen.dart';
 
 class HomeScreen extends StatelessWidget {
@@ -136,6 +138,8 @@ class HomeScreen extends StatelessWidget {
       body: SingleChildScrollView(
         child: Column(
           children: [
+            RecommendationsWidget(),
+            AchievementsWidget(),
             const SummaryCard(),
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 16.0),

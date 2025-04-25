@@ -10,7 +10,7 @@ void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await Hive.initFlutter();
 
-  //Limpia datos anteriores que puedan tener typeId desconocido (32)
+  // 🔥 Limpia datos anteriores que puedan tener typeId desconocido (32)
   //await Hive.deleteBoxFromDisk('transactions');
   //await Hive.deleteBoxFromDisk('goals');
   //await Hive.deleteBoxFromDisk('completed_goals');

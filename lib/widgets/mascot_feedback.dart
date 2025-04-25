@@ -1,44 +1,38 @@
+
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+import '../providers/wallet_provider.dart';
 
 class MascotFeedback extends StatelessWidget {
   const MascotFeedback({super.key});
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      margin: const EdgeInsets.all(16),
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: Colors.purple[100],
-        borderRadius: BorderRadius.circular(12),
-      ),
-      child: Row(
-        children: [
-          Container(
-            width: 50,
-            height: 50,
-            decoration: BoxDecoration(
-              color: Colors.purple[200],
-              shape: BoxShape.circle,
-            ),
-            child: const Center(
-              child: Icon(
-                Icons.emoji_emotions,
-                color: Colors.white,
-                size: 30,
+    final message = context.watch<WalletProvider>().getMascotMessage();
+
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+      child: Card(
+        elevation: 3,
+        child: Padding(
+          padding: const EdgeInsets.all(12),
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const CircleAvatar(
+                backgroundColor: Colors.blueAccent,
+                child: Icon(Icons.pets, color: Colors.white),
               ),
-            ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Text(
+                  message,
+                  style: const TextStyle(fontSize: 16),
+                ),
+              ),
+            ],
           ),
-          const SizedBox(width: 16),
-          const Text(
-            '¡Buen trabajo!',
-            style: TextStyle(
-              color: Colors.purple,
-              fontWeight: FontWeight.bold,
-              fontSize: 16,
-            ),
-          ),
-        ],
+        ),
       ),
     );
   }

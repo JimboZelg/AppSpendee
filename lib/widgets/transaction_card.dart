@@ -19,7 +19,7 @@ class TransactionCard extends StatelessWidget {
 
   void _showGoalSelectionDialog(BuildContext context, double amount, String description) {
     final goals = context.read<WalletProvider>().goals;
-    
+
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
@@ -40,23 +40,23 @@ class TransactionCard extends StatelessWidget {
                   description: description,
                 );
                 context.read<WalletProvider>().addTransaction(
-                    description,
-                    transaction,
-                );
+                      description,
+                      transaction,
+                    );
 
                 Navigator.pop(context);
               },
             ),
             const Divider(),
             ...goals.map((goal) => ListTile(
-              leading: const Icon(Icons.flag),
-              title: Text(goal.name),
-              subtitle: Text('${goal.currentAmount.toStringAsFixed(0)}/${goal.targetAmount.toStringAsFixed(0)}'),
-              onTap: () {
-                context.read<WalletProvider>().addToGoal(goal.id, amount);
-                Navigator.pop(context);
-              },
-            )),
+                  leading: const Icon(Icons.flag),
+                  title: Text(goal.name),
+                  subtitle: Text('${goal.currentAmount.toStringAsFixed(0)}/${goal.targetAmount.toStringAsFixed(0)}'),
+                  onTap: () async {
+                    await context.read<WalletProvider>().addToGoal(goal.id, amount);
+                    Navigator.pop(context);
+                  },
+                )),
           ],
         ),
       ),
@@ -65,8 +65,8 @@ class TransactionCard extends StatelessWidget {
 
   void _showAmountDialog(BuildContext context) {
     final textController = TextEditingController();
-    final descriptionController = TextEditingController(); // Define the description controller
-    
+    final descriptionController = TextEditingController();
+
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
@@ -97,28 +97,34 @@ class TransactionCard extends StatelessWidget {
             child: const Text('Cancelar'),
           ),
           TextButton(
-            onPressed: () {
-              final amount = double.tryParse(textController.text);
-              if (amount != null && amount > 0) {
+            onPressed: () async {
+              final parsedAmount = double.tryParse(textController.text);
+              if (parsedAmount != null && parsedAmount > 0) {
                 Navigator.pop(context);
                 if (isExpense) {
-                  // For expenses, directly add transaction
                   final transaction = Transaction(
                     id: DateTime.now().toString(),
-                    amount: amount,
+                    amount: parsedAmount,
                     category: title,
                     date: DateTime.now(),
                     type: TransactionType.expense,
-                    description: descriptionController.text, // Use the description
+                    description: descriptionController.text,
                   );
-                  context.read<WalletProvider>().addTransaction(
+                  final success = await context.read<WalletProvider>().addTransaction(
                     descriptionController.text,
                     transaction,
                   );
 
+                  if (!success) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(
+                        content: Text("⚠️ No puedes gastar más de lo que tienes disponible."),
+                        backgroundColor: Colors.redAccent,
+                      ),
+                    );
+                  }
                 } else {
-                  // For income, show goal selection dialog
-                  _showGoalSelectionDialog(context, amount, descriptionController.text);
+                  _showGoalSelectionDialog(context, parsedAmount, descriptionController.text);
                 }
               }
             },

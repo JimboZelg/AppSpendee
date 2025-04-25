@@ -26,10 +26,9 @@ class WalletProvider with ChangeNotifier {
       _transactionsBox = await Hive.openBox<Transaction>(transactionsBoxName);
       _goalsBox = await Hive.openBox<Goal>(goalsBoxName);
       _completedGoalsBox = await Hive.openBox<Goal>(completedGoalsBoxName);
-
       await loadData();
     } catch (e) {
-      debugPrint('Error initializing Hive: $e');
+      debugPrint('Error initializing Hive: \$e');
       _initializeDefaultData();
     }
   }
@@ -49,7 +48,7 @@ class WalletProvider with ChangeNotifier {
       _completedGoals = _completedGoalsBox.values.toList();
       notifyListeners();
     } catch (e) {
-      debugPrint('Error loading data: $e');
+      debugPrint('Error loading data: \$e');
     }
   }
 
@@ -58,7 +57,7 @@ class WalletProvider with ChangeNotifier {
       await _transactionsBox.clear();
       await _transactionsBox.addAll(_transactions);
     } catch (e) {
-      debugPrint('Error saving transactions: $e');
+      debugPrint('Error saving transactions: \$e');
     }
   }
 
@@ -67,7 +66,7 @@ class WalletProvider with ChangeNotifier {
       await _goalsBox.clear();
       await _goalsBox.addAll(_goals);
     } catch (e) {
-      debugPrint('Error saving goals: $e');
+      debugPrint('Error saving goals: \$e');
     }
   }
 
@@ -76,7 +75,7 @@ class WalletProvider with ChangeNotifier {
       await _completedGoalsBox.clear();
       await _completedGoalsBox.addAll(_completedGoals);
     } catch (e) {
-      debugPrint('Error saving completed goals: $e');
+      debugPrint('Error saving completed goals: \$e');
     }
   }
 
@@ -105,7 +104,11 @@ class WalletProvider with ChangeNotifier {
         .fold(0, (sum, transaction) => sum + transaction.amount);
   }
 
-  Future<void> addTransaction(String description, Transaction transaction) async {
+  Future<bool> addTransaction(String description, Transaction transaction) async {
+    if (transaction.type == TransactionType.expense && transaction.amount > totalBalance) {
+      return false; 
+    }
+
     final newTransaction = Transaction(
       id: transaction.id,
       amount: transaction.amount,
@@ -117,7 +120,9 @@ class WalletProvider with ChangeNotifier {
     _transactions.add(newTransaction);
     await _saveTransactions();
     notifyListeners();
+    return true;
   }
+
 
   Future<void> addToGoal(String goalId, double amount) async {
     final goalIndex = _goals.indexWhere((g) => g.id == goalId);
@@ -137,11 +142,11 @@ class WalletProvider with ChangeNotifier {
       }
 
       await addTransaction(
-        'Meta: ${oldGoal.name}',
+        'Meta: \${oldGoal.name}',
         Transaction(
           id: DateTime.now().toString(),
           amount: amount,
-          category: 'Meta: ${oldGoal.name}',
+          category: 'Meta: \${oldGoal.name}',
           date: DateTime.now(),
           type: TransactionType.income,
           description: 'goal',
@@ -172,5 +177,85 @@ class WalletProvider with ChangeNotifier {
       await _saveGoals();
       notifyListeners();
     }
+  }
+
+  Map<String, double> getMonthlySavingsPercentages() {
+  final Map<String, double> monthlySavings = {};
+
+  for (var transaction in _transactions) {
+    if (transaction.description == 'goal') continue;
+    final monthYear = "${transaction.date.month.toString().padLeft(2, '0')}-${transaction.date.year}";
+
+    if (!monthlySavings.containsKey(monthYear)) {
+      monthlySavings[monthYear] = 0.0;
+    }
+  }
+
+  monthlySavings.forEach((monthYear, _) {
+    double ingresos = 0;
+    double egresos = 0;
+
+    for (var transaction in _transactions) {
+      if (transaction.description == 'goal') continue;
+      final txMonthYear = "${transaction.date.month.toString().padLeft(2, '0')}-${transaction.date.year}";
+
+      if (txMonthYear == monthYear) {
+        if (transaction.type == TransactionType.income) {
+          ingresos += transaction.amount;
+        } else {
+          egresos += transaction.amount;
+        }
+      }
+    }
+
+    final ahorro = ingresos - egresos;
+    final porcentaje = ingresos > 0 ? (ahorro / ingresos) * 100 : 0.0;
+    monthlySavings[monthYear] = porcentaje;
+  });
+
+  return monthlySavings;
+}
+
+
+  String getRecommendationForMonth(String monthYear) {
+    final monthlyData = getMonthlySavingsPercentages();
+    if (!monthlyData.containsKey(monthYear)) return "No hay datos para este mes.";
+    final savingsPercent = monthlyData[monthYear]!;
+    if (savingsPercent < 10) {
+      return "Estás ahorrando menos del 10% de tus ingresos. Revisa tus gastos.";
+    } else if (savingsPercent < 20) {
+      return "Buen trabajo. Vas por buen camino, ¡pero puedes mejorar!";
+    } else {
+      return "¡Excelente! Estás ahorrando más del 20%.";
+    }
+  }
+
+  String getMascotMessage() {
+    final now = DateTime.now();
+    final currentMonthYear = "\${now.month.toString().padLeft(2, '0')}-\${now.year}";
+    final savings = getMonthlySavingsPercentages();
+    final savingPercent = savings[currentMonthYear] ?? 0;
+
+    if (savingPercent >= 30) {
+      return "🌟 ¡Increíble! Estás ahorrando un gran porcentaje este mes. ¡Sigue así!";
+    } else if (savingPercent >= 15) {
+      return "😊 Buen trabajo. Vas por un buen camino, ¡no aflojes!";
+    } else if (savingPercent >= 1) {
+      return "⚠️ Puedes mejorar tu ahorro este mes. Revisa tus gastos.";
+    } else {
+      return "😟 Este mes no has ahorrado. ¡No te preocupes, el próximo puedes empezar mejor!";
+    }
+  }
+
+  int get totalGoodSavingsMonths {
+    final savings = getMonthlySavingsPercentages();
+    return savings.values.where((percent) => percent >= 10).length;
+  }
+
+  int get totalGoalsCompleted => _completedGoals.length;
+
+  int get consistentMonths {
+    final Map<String, double> savings = getMonthlySavingsPercentages();
+    return savings.values.where((percent) => percent > 0 && percent <= 100).length;
   }
 }
