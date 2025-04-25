@@ -141,13 +141,11 @@ class HomeScreen extends StatelessWidget {
       body: SingleChildScrollView(
         child: Column(
           children: [
-            RecommendationsWidget(),
+            const SummaryCard(), 
             AchievementsWidget(),
-            const SummaryCard(),
-          BalancePieChart(),
-          MonthlyBarChart(),
-          FullReportButton(),
-            Padding(
+            RecommendationsWidget(),
+          
+               Padding(
               padding: const EdgeInsets.symmetric(horizontal: 16.0),
               child: Row(
                 children: [
@@ -170,6 +168,11 @@ class HomeScreen extends StatelessWidget {
               ),
             ),
             const GoalsSection(),
+            BalancePieChart(),
+            MonthlyBarChart(),
+            FullReportButton(),
+       
+            
             const MascotFeedback(),
           ],
         ),
