@@ -37,13 +37,12 @@ class TransactionCard extends StatelessWidget {
                   category: title,
                   date: DateTime.now(),
                   type: TransactionType.income,
-                  description: description,
+                  description: 'general',
                 );
                 context.read<WalletProvider>().addTransaction(
-                      description,
+                      'general',
                       transaction,
                     );
-
                 Navigator.pop(context);
               },
             ),
@@ -99,32 +98,32 @@ class TransactionCard extends StatelessWidget {
           TextButton(
             onPressed: () async {
               final parsedAmount = double.tryParse(textController.text);
+              final description = descriptionController.text.trim().toLowerCase();
+
               if (parsedAmount != null && parsedAmount > 0) {
                 Navigator.pop(context);
                 if (isExpense) {
+                  if (description != 'general') {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(
+                        content: Text("⚠️ Solo puedes hacer gastos desde la Cuenta General."),
+                        backgroundColor: Colors.redAccent,
+                      ),
+                    );
+                    return;
+                  }
+
                   final transaction = Transaction(
                     id: DateTime.now().toString(),
                     amount: parsedAmount,
                     category: title,
                     date: DateTime.now(),
                     type: TransactionType.expense,
-                    description: descriptionController.text,
+                    description: 'general',
                   );
-                  final success = await context.read<WalletProvider>().addTransaction(
-                    descriptionController.text,
-                    transaction,
-                  );
-
-                  if (!success) {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(
-                        content: Text("⚠️ No puedes gastar más de lo que tienes disponible."),
-                        backgroundColor: Colors.redAccent,
-                      ),
-                    );
-                  }
+                  context.read<WalletProvider>().addTransaction('general', transaction);
                 } else {
-                  _showGoalSelectionDialog(context, parsedAmount, descriptionController.text);
+                  _showGoalSelectionDialog(context, parsedAmount, description);
                 }
               }
             },

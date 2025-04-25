@@ -3,6 +3,9 @@ import '../widgets/recommendations_widget.dart';
 import 'package:provider/provider.dart';
 import '../providers/wallet_provider.dart';
 import '../widgets/summary_card.dart';
+import '../widgets/balance_pie_chart.dart';
+import '../widgets/monthly_bar_chart.dart';
+import '../widgets/full_report_button.dart';
 import '../widgets/transaction_card.dart';
 import '../widgets/goals_section.dart';
 import '../widgets/mascot_feedback.dart';
@@ -141,6 +144,9 @@ class HomeScreen extends StatelessWidget {
             RecommendationsWidget(),
             AchievementsWidget(),
             const SummaryCard(),
+          BalancePieChart(),
+          MonthlyBarChart(),
+          FullReportButton(),
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 16.0),
               child: Row(
