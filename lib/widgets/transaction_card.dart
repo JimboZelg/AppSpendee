@@ -63,76 +63,85 @@ class TransactionCard extends StatelessWidget {
   }
 
   void _showAmountDialog(BuildContext context) {
-    final textController = TextEditingController();
-    final descriptionController = TextEditingController();
+  final textController = TextEditingController();
+  final descriptionController = TextEditingController();
 
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: Text(isExpense ? 'Agregar Gasto' : 'Agregar Ingreso'),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            TextField(
-              controller: textController,
-              keyboardType: const TextInputType.numberWithOptions(decimal: true),
-              decoration: const InputDecoration(
-                labelText: 'Monto',
-                prefixText: '\$',
-              ),
+  showDialog(
+    context: context,
+    builder: (context) => AlertDialog(
+      title: Text(isExpense ? 'Agregar Gasto' : 'Agregar Ingreso'),
+      content: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          TextField(
+            controller: textController,
+            keyboardType: const TextInputType.numberWithOptions(decimal: true),
+            decoration: const InputDecoration(
+              labelText: 'Monto',
+              prefixText: '\$',
             ),
-            const SizedBox(height: 16),
-            TextField(
-              controller: descriptionController,
-              decoration: const InputDecoration(
-                labelText: 'Descripción',
-              ),
-            ),
-          ],
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('Cancelar'),
           ),
-          TextButton(
-            onPressed: () async {
-              final parsedAmount = double.tryParse(textController.text);
-              final description = descriptionController.text.trim().toLowerCase();
-
-              if (parsedAmount != null && parsedAmount > 0) {
-                Navigator.pop(context);
-                if (isExpense) {
-                  if (description != 'general') {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(
-                        content: Text("⚠️ Solo puedes hacer gastos desde la Cuenta General."),
-                        backgroundColor: Colors.redAccent,
-                      ),
-                    );
-                    return;
-                  }
-
-                  final transaction = Transaction(
-                    id: DateTime.now().toString(),
-                    amount: parsedAmount,
-                    category: title,
-                    date: DateTime.now(),
-                    type: TransactionType.expense,
-                    description: 'general',
-                  );
-                  context.read<WalletProvider>().addTransaction('general', transaction);
-                } else {
-                  _showGoalSelectionDialog(context, parsedAmount, description);
-                }
-              }
-            },
-            child: const Text('Agregar'),
+          const SizedBox(height: 16),
+          TextField(
+            controller: descriptionController,
+            decoration: const InputDecoration(
+              labelText: 'Descripción',
+            ),
           ),
         ],
       ),
-    );
-  }
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.pop(context),
+          child: const Text('Cancelar'),
+        ),
+        TextButton(
+          onPressed: () async {
+            final parsedAmount = double.tryParse(textController.text);
+            final description = descriptionController.text.trim().toLowerCase();
+
+            if (parsedAmount != null && parsedAmount > 0) {
+              Navigator.pop(context);
+
+              if (isExpense) {
+                final transaction = Transaction(
+                  id: DateTime.now().toString(),
+                  amount: parsedAmount,
+                  category: title,
+                  date: DateTime.now(),
+                  type: TransactionType.expense,
+                  description: 'general', // siempre gastos en cuenta general
+                );
+
+                final result = await context.read<WalletProvider>().addTransaction('general', transaction);
+
+                if (result == null) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(
+                      content: Text('⚠️ No puedes gastar más de lo disponible en la Cuenta General.'),
+                      backgroundColor: Colors.redAccent,
+                    ),
+                  );
+                } else if (result == true) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(
+                      content: Text('Gasto registrado. Nota: este es un gasto alto.'),
+                      backgroundColor: Colors.orange,
+                    ),
+                  );
+                }
+              } else {
+                _showGoalSelectionDialog(context, parsedAmount, description);
+              }
+            }
+          },
+          child: const Text('Agregar'),
+        ),
+      ],
+    ),
+  );
+}
+
 
   @override
   Widget build(BuildContext context) {

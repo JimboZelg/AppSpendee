@@ -28,7 +28,7 @@ class WalletProvider with ChangeNotifier {
       _completedGoalsBox = await Hive.openBox<Goal>(completedGoalsBoxName);
       await loadData();
     } catch (e) {
-      debugPrint('Error initializing Hive: \$e');
+      debugPrint('Error initializing Hive: $e');
       _initializeDefaultData();
     }
   }
@@ -48,7 +48,7 @@ class WalletProvider with ChangeNotifier {
       _completedGoals = _completedGoalsBox.values.toList();
       notifyListeners();
     } catch (e) {
-      debugPrint('Error loading data: \$e');
+      debugPrint('Error loading data: $e');
     }
   }
 
@@ -57,7 +57,7 @@ class WalletProvider with ChangeNotifier {
       await _transactionsBox.clear();
       await _transactionsBox.addAll(_transactions);
     } catch (e) {
-      debugPrint('Error saving transactions: \$e');
+      debugPrint('Error saving transactions: $e');
     }
   }
 
@@ -66,7 +66,7 @@ class WalletProvider with ChangeNotifier {
       await _goalsBox.clear();
       await _goalsBox.addAll(_goals);
     } catch (e) {
-      debugPrint('Error saving goals: \$e');
+      debugPrint('Error saving goals: $e');
     }
   }
 
@@ -75,7 +75,7 @@ class WalletProvider with ChangeNotifier {
       await _completedGoalsBox.clear();
       await _completedGoalsBox.addAll(_completedGoals);
     } catch (e) {
-      debugPrint('Error saving completed goals: \$e');
+      debugPrint('Error saving completed goals: $e');
     }
   }
 
@@ -94,7 +94,7 @@ class WalletProvider with ChangeNotifier {
 
   double get totalIncome {
     return _transactions
-        .where((t) => t.type == TransactionType.income && t.description != 'goal')
+        .where((t) => t.type == TransactionType.income)
         .fold(0, (sum, transaction) => sum + transaction.amount);
   }
 
@@ -105,8 +105,20 @@ class WalletProvider with ChangeNotifier {
   }
 
   Future<bool> addTransaction(String description, Transaction transaction) async {
-    if (transaction.type == TransactionType.expense && transaction.amount > totalBalance) {
-      return false; 
+    bool isHighExpense = transaction.type == TransactionType.expense && transaction.amount >= 1000;
+
+    final isGeneral = description != 'goal' && !description.startsWith('Meta:');
+
+    final generalBalance = _transactions
+        .where((tx) => tx.description != 'goal' && !tx.description.startsWith('Meta:'))
+        .fold<double>(0, (sum, tx) {
+          if (tx.type == TransactionType.income) return sum + tx.amount;
+          if (tx.type == TransactionType.expense) return sum - tx.amount;
+          return sum;
+        });
+
+    if (transaction.type == TransactionType.expense && isGeneral && transaction.amount > generalBalance) {
+      return false;
     }
 
     final newTransaction = Transaction(
@@ -117,12 +129,12 @@ class WalletProvider with ChangeNotifier {
       type: transaction.type,
       description: description,
     );
+
     _transactions.add(newTransaction);
     await _saveTransactions();
     notifyListeners();
-    return true;
+    return isHighExpense;
   }
-
 
   Future<void> addToGoal(String goalId, double amount) async {
     final goalIndex = _goals.indexWhere((g) => g.id == goalId);
@@ -142,11 +154,11 @@ class WalletProvider with ChangeNotifier {
       }
 
       await addTransaction(
-        'Meta: \${oldGoal.name}',
+        'goal', // muy importante: ingresos a metas marcan description: 'goal'
         Transaction(
           id: DateTime.now().toString(),
           amount: amount,
-          category: 'Meta: \${oldGoal.name}',
+          category: 'Meta: ${oldGoal.name}',
           date: DateTime.now(),
           type: TransactionType.income,
           description: 'goal',
@@ -180,42 +192,41 @@ class WalletProvider with ChangeNotifier {
   }
 
   Map<String, double> getMonthlySavingsPercentages() {
-  final Map<String, double> monthlySavings = {};
-
-  for (var transaction in _transactions) {
-    if (transaction.description == 'goal') continue;
-    final monthYear = "${transaction.date.month.toString().padLeft(2, '0')}-${transaction.date.year}";
-
-    if (!monthlySavings.containsKey(monthYear)) {
-      monthlySavings[monthYear] = 0.0;
-    }
-  }
-
-  monthlySavings.forEach((monthYear, _) {
-    double ingresos = 0;
-    double egresos = 0;
+    final Map<String, double> monthlySavings = {};
 
     for (var transaction in _transactions) {
       if (transaction.description == 'goal') continue;
-      final txMonthYear = "${transaction.date.month.toString().padLeft(2, '0')}-${transaction.date.year}";
+      final monthYear = "${transaction.date.month.toString().padLeft(2, '0')}-${transaction.date.year}";
 
-      if (txMonthYear == monthYear) {
-        if (transaction.type == TransactionType.income) {
-          ingresos += transaction.amount;
-        } else {
-          egresos += transaction.amount;
-        }
+      if (!monthlySavings.containsKey(monthYear)) {
+        monthlySavings[monthYear] = 0.0;
       }
     }
 
-    final ahorro = ingresos - egresos;
-    final porcentaje = ingresos > 0 ? (ahorro / ingresos) * 100 : 0.0;
-    monthlySavings[monthYear] = porcentaje;
-  });
+    monthlySavings.forEach((monthYear, _) {
+      double ingresos = 0;
+      double egresos = 0;
 
-  return monthlySavings;
-}
+      for (var transaction in _transactions) {
+        if (transaction.description == 'goal') continue;
+        final txMonthYear = "${transaction.date.month.toString().padLeft(2, '0')}-${transaction.date.year}";
 
+        if (txMonthYear == monthYear) {
+          if (transaction.type == TransactionType.income) {
+            ingresos += transaction.amount;
+          } else {
+            egresos += transaction.amount;
+          }
+        }
+      }
+
+      final ahorro = ingresos - egresos;
+      final porcentaje = ingresos > 0 ? (ahorro / ingresos) * 100 : 0.0;
+      monthlySavings[monthYear] = porcentaje;
+    });
+
+    return monthlySavings;
+  }
 
   String getRecommendationForMonth(String monthYear) {
     final monthlyData = getMonthlySavingsPercentages();
@@ -232,7 +243,7 @@ class WalletProvider with ChangeNotifier {
 
   String getMascotMessage() {
     final now = DateTime.now();
-    final currentMonthYear = "\${now.month.toString().padLeft(2, '0')}-\${now.year}";
+    final currentMonthYear = "${now.month.toString().padLeft(2, '0')}-${now.year}";
     final savings = getMonthlySavingsPercentages();
     final savingPercent = savings[currentMonthYear] ?? 0;
 
@@ -255,7 +266,7 @@ class WalletProvider with ChangeNotifier {
   int get totalGoalsCompleted => _completedGoals.length;
 
   int get consistentMonths {
-    final Map<String, double> savings = getMonthlySavingsPercentages();
+    final savings = getMonthlySavingsPercentages();
     return savings.values.where((percent) => percent > 0 && percent <= 100).length;
   }
 }
