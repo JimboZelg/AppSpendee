@@ -10,12 +10,11 @@ void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await Hive.initFlutter();
 
-  // 🔥 Limpia datos anteriores
+  // Limpia datos anteriores
   //await Hive.deleteBoxFromDisk('transactions');
   //await Hive.deleteBoxFromDisk('goals');
   //await Hive.deleteBoxFromDisk('completed_goals');
 
-  // Registra los adaptadores correctamente con sus IDs reales
   if (!Hive.isAdapterRegistered(1)) {
     Hive.registerAdapter(TransactionAdapter()); // typeId: 1
   }

@@ -17,6 +17,10 @@ class WalletProvider with ChangeNotifier {
   List<Goal> _goals = [];
   List<Goal> _completedGoals = [];
 
+  // Estado de ánimo de la mascota
+  String mascotMood = "normal"; // 'normal', 'feliz', 'triste'
+  int _consecutiveExpenses = 0; // contador de gastos consecutivos
+
   WalletProvider() {
     _initHive();
   }
@@ -32,10 +36,6 @@ class WalletProvider with ChangeNotifier {
       _initializeDefaultData();
     }
   }
-
-  String mascotMood = "normal"; // Puede ser 'normal', 'feliz', o 'triste'
-int _consecutiveExpenses = 0; // contador de gastos consecutivos
-
 
   void _initializeDefaultData() {
     _goals = [
@@ -88,204 +88,266 @@ int _consecutiveExpenses = 0; // contador de gastos consecutivos
   List<Goal> get completedGoals => _completedGoals;
 
   double get totalBalance {
-    return _transactions.fold(0, (sum, transaction) {
-      if (transaction.description != 'goal') {
-        return sum + (transaction.type == TransactionType.expense ? -transaction.amount : transaction.amount);
-      }
-      return sum;
-    });
-  }
-
-  double get totalIncome {
-    return _transactions
-        .where((t) => t.type == TransactionType.income)
-        .fold(0, (sum, transaction) => sum + transaction.amount);
-  }
-
-  double get totalExpenses {
-    return _transactions
-        .where((t) => t.type == TransactionType.expense)
-        .fold(0, (sum, transaction) => sum + transaction.amount);
-  }
-
-  Future<bool> addTransaction(String description, Transaction transaction) async {
-  bool isHighExpense = transaction.type == TransactionType.expense && transaction.amount >= 1000;
-
-  final isGeneral = description != 'goal' && !description.startsWith('Meta:');
-
-  final generalBalance = _transactions
-      .where((tx) => tx.description != 'goal' && !tx.description.startsWith('Meta:'))
-      .fold<double>(0, (sum, tx) {
-        if (tx.type == TransactionType.income) return sum + tx.amount;
-        if (tx.type == TransactionType.expense) return sum - tx.amount;
+    try {
+      return _transactions.fold(0, (sum, transaction) {
+        if (transaction.description != 'goal') {
+          return sum + (transaction.type == TransactionType.expense ? -transaction.amount : transaction.amount);
+        }
         return sum;
       });
-
-  if (transaction.type == TransactionType.expense && isGeneral && transaction.amount > generalBalance) {
-    return false;
-  }
-
-  final newTransaction = Transaction(
-    id: transaction.id,
-    amount: transaction.amount,
-    category: transaction.category,
-    date: transaction.date,
-    type: transaction.type,
-    description: description,
-  );
-
-  _transactions.add(newTransaction);
-
-  // 👇 LOGICA NUEVA PARA MASCOTA
-  if (transaction.type == TransactionType.income) {
-    mascotMood = "feliz"; // Si hay ingreso, mascota feliz
-    _consecutiveExpenses = 0; // Reset contador de gastos
-  } else if (transaction.type == TransactionType.expense) {
-    _consecutiveExpenses++;
-    if (_consecutiveExpenses >= 3) {
-      mascotMood = "triste"; // Si hay 3 gastos seguidos, mascota triste
-    } else {
-      mascotMood = "normal"; // Si 1 o 2 gastos seguidos, normal
+    } catch (e) {
+      debugPrint('Error calculating total balance: $e');
+      return 0;
     }
   }
 
-  await _saveTransactions();
-  notifyListeners();
-  return isHighExpense;
-}
+  double get totalIncome {
+    try {
+      return _transactions
+          .where((t) => t.type == TransactionType.income)
+          .fold(0, (sum, transaction) => sum + transaction.amount);
+    } catch (e) {
+      debugPrint('Error calculating total income: $e');
+      return 0;
+    }
+  }
 
+  double get totalExpenses {
+    try {
+      return _transactions
+          .where((t) => t.type == TransactionType.expense)
+          .fold(0, (sum, transaction) => sum + transaction.amount);
+    } catch (e) {
+      debugPrint('Error calculating total expenses: $e');
+      return 0;
+    }
+  }
 
-  Future<void> addToGoal(String goalId, double amount) async {
-    final goalIndex = _goals.indexWhere((g) => g.id == goalId);
-    if (goalIndex != -1) {
-      final oldGoal = _goals[goalIndex];
-      final newAmount = oldGoal.currentAmount + amount;
+  Future<bool> addTransaction(String description, Transaction transaction) async {
+    try {
+      bool isHighExpense = transaction.type == TransactionType.expense && transaction.amount >= 1000;
 
-      if (newAmount >= oldGoal.targetAmount) {
-        final completedGoal = oldGoal.copyWith(currentAmount: newAmount);
-        _completedGoals.add(completedGoal);
-        _goals.removeAt(goalIndex);
-        await _saveCompletedGoals();
-        await _saveGoals();
-      } else {
-        _goals[goalIndex] = oldGoal.copyWith(currentAmount: newAmount);
-        await _saveGoals();
+      final isGeneral = description != 'goal' && !description.startsWith('Meta:');
+
+      final generalBalance = _transactions
+          .where((tx) => tx.description != 'goal' && !tx.description.startsWith('Meta:'))
+          .fold<double>(0, (sum, tx) {
+            if (tx.type == TransactionType.income) return sum + tx.amount;
+            if (tx.type == TransactionType.expense) return sum - tx.amount;
+            return sum;
+          });
+
+      if (transaction.type == TransactionType.expense && isGeneral && transaction.amount > generalBalance) {
+        return false;
       }
 
-      await addTransaction(
-        'goal', // muy importante: ingresos a metas marcan description: 'goal'
-        Transaction(
-          id: DateTime.now().toString(),
-          amount: amount,
-          category: 'Meta: ${oldGoal.name}',
-          date: DateTime.now(),
-          type: TransactionType.income,
-          description: 'goal',
-        ),
+      final newTransaction = Transaction(
+        id: transaction.id,
+        amount: transaction.amount,
+        category: transaction.category,
+        date: transaction.date,
+        type: transaction.type,
+        description: description,
       );
 
+      _transactions.add(newTransaction);
+
+      // Estado de ánimo
+      if (transaction.type == TransactionType.income) {
+        mascotMood = "feliz";
+        _consecutiveExpenses = 0;
+      } else if (transaction.type == TransactionType.expense) {
+        _consecutiveExpenses++;
+        if (_consecutiveExpenses >= 3) {
+          mascotMood = "triste";
+        } else {
+          mascotMood = "normal";
+        }
+      }
+
+      await _saveTransactions();
       notifyListeners();
+      return isHighExpense;
+    } catch (e) {
+      debugPrint('Error adding transaction: $e');
+      return false;
+    }
+  }
+
+  Future<void> addToGoal(String goalId, double amount) async {
+    try {
+      final goalIndex = _goals.indexWhere((g) => g.id == goalId);
+      if (goalIndex != -1) {
+        final oldGoal = _goals[goalIndex];
+        final newAmount = oldGoal.currentAmount + amount;
+
+        if (newAmount >= oldGoal.targetAmount) {
+          final completedGoal = oldGoal.copyWith(currentAmount: newAmount);
+          _completedGoals.add(completedGoal);
+          _goals.removeAt(goalIndex);
+          await _saveCompletedGoals();
+          await _saveGoals();
+        } else {
+          _goals[goalIndex] = oldGoal.copyWith(currentAmount: newAmount);
+          await _saveGoals();
+        }
+
+        await addTransaction(
+          'goal',
+          Transaction(
+            id: DateTime.now().toString(),
+            amount: amount,
+            category: 'Meta: ${oldGoal.name}',
+            date: DateTime.now(),
+            type: TransactionType.income,
+            description: 'goal',
+          ),
+        );
+
+        notifyListeners();
+      }
+    } catch (e) {
+      debugPrint('Error adding to goal: $e');
     }
   }
 
   Future<void> addNewGoal(String name, double targetAmount) async {
-    final newGoal = Goal(
-      id: DateTime.now().toString(),
-      name: name,
-      currentAmount: 0,
-      targetAmount: targetAmount,
-      frequency: 'Personalizado',
-    );
-    _goals.add(newGoal);
-    await _saveGoals();
-    notifyListeners();
+    try {
+      final newGoal = Goal(
+        id: DateTime.now().toString(),
+        name: name,
+        currentAmount: 0,
+        targetAmount: targetAmount,
+        frequency: 'Personalizado',
+      );
+      _goals.add(newGoal);
+      await _saveGoals();
+      notifyListeners();
+    } catch (e) {
+      debugPrint('Error adding new goal: $e');
+    }
   }
 
   Future<void> updateGoal(Goal goal) async {
-    final index = _goals.indexWhere((g) => g.id == goal.id);
-    if (index != -1) {
-      _goals[index] = goal;
-      await _saveGoals();
-      notifyListeners();
+    try {
+      final index = _goals.indexWhere((g) => g.id == goal.id);
+      if (index != -1) {
+        _goals[index] = goal;
+        await _saveGoals();
+        notifyListeners();
+      }
+    } catch (e) {
+      debugPrint('Error updating goal: $e');
     }
   }
 
   Map<String, double> getMonthlySavingsPercentages() {
     final Map<String, double> monthlySavings = {};
 
-    for (var transaction in _transactions) {
-      if (transaction.description == 'goal') continue;
-      final monthYear = "${transaction.date.month.toString().padLeft(2, '0')}-${transaction.date.year}";
-
-      if (!monthlySavings.containsKey(monthYear)) {
-        monthlySavings[monthYear] = 0.0;
-      }
-    }
-
-    monthlySavings.forEach((monthYear, _) {
-      double ingresos = 0;
-      double egresos = 0;
-
+    try {
       for (var transaction in _transactions) {
         if (transaction.description == 'goal') continue;
-        final txMonthYear = "${transaction.date.month.toString().padLeft(2, '0')}-${transaction.date.year}";
+        final monthYear = "${transaction.date.month.toString().padLeft(2, '0')}-${transaction.date.year}";
 
-        if (txMonthYear == monthYear) {
-          if (transaction.type == TransactionType.income) {
-            ingresos += transaction.amount;
-          } else {
-            egresos += transaction.amount;
-          }
+        if (!monthlySavings.containsKey(monthYear)) {
+          monthlySavings[monthYear] = 0.0;
         }
       }
 
-      final ahorro = ingresos - egresos;
-      final porcentaje = ingresos > 0 ? (ahorro / ingresos) * 100 : 0.0;
-      monthlySavings[monthYear] = porcentaje;
-    });
+      monthlySavings.forEach((monthYear, _) {
+        double ingresos = 0;
+        double egresos = 0;
+
+        for (var transaction in _transactions) {
+          if (transaction.description == 'goal') continue;
+          final txMonthYear = "${transaction.date.month.toString().padLeft(2, '0')}-${transaction.date.year}";
+
+          if (txMonthYear == monthYear) {
+            if (transaction.type == TransactionType.income) {
+              ingresos += transaction.amount;
+            } else {
+              egresos += transaction.amount;
+            }
+          }
+        }
+
+        final ahorro = ingresos - egresos;
+        final porcentaje = ingresos > 0 ? (ahorro / ingresos) * 100 : 0.0;
+        monthlySavings[monthYear] = porcentaje;
+      });
+    } catch (e) {
+      debugPrint('Error calculating monthly savings: $e');
+    }
 
     return monthlySavings;
   }
 
   String getRecommendationForMonth(String monthYear) {
-    final monthlyData = getMonthlySavingsPercentages();
-    if (!monthlyData.containsKey(monthYear)) return "No hay datos para este mes.";
-    final savingsPercent = monthlyData[monthYear]!;
-    if (savingsPercent < 10) {
-      return "Estás ahorrando menos del 10% de tus ingresos. Revisa tus gastos.";
-    } else if (savingsPercent < 20) {
-      return "Buen trabajo. Vas por buen camino, ¡pero puedes mejorar!";
-    } else {
-      return "¡Excelente! Estás ahorrando más del 20%.";
+    try {
+      final monthlyData = getMonthlySavingsPercentages();
+      if (!monthlyData.containsKey(monthYear)) return "No hay datos para este mes.";
+      final savingsPercent = monthlyData[monthYear]!;
+      if (savingsPercent < 10) {
+        return "Estás ahorrando menos del 10% de tus ingresos. Revisa tus gastos.";
+      } else if (savingsPercent < 20) {
+        return "Buen trabajo. Vas por buen camino, ¡pero puedes mejorar!";
+      } else {
+        return "¡Excelente! Estás ahorrando más del 20%.";
+      }
+    } catch (e) {
+      debugPrint('Error getting recommendation: $e');
+      return "No se pudo calcular la recomendación.";
     }
   }
 
   String getMascotMessage() {
-    final now = DateTime.now();
-    final currentMonthYear = "${now.month.toString().padLeft(2, '0')}-${now.year}";
-    final savings = getMonthlySavingsPercentages();
-    final savingPercent = savings[currentMonthYear] ?? 0;
+    try {
+      final now = DateTime.now();
+      final currentMonthYear = "${now.month.toString().padLeft(2, '0')}-${now.year}";
+      final savings = getMonthlySavingsPercentages();
+      final savingPercent = savings[currentMonthYear] ?? 0;
 
-    if (savingPercent >= 30) {
-      return "🌟 ¡Increíble! Estás ahorrando un gran porcentaje este mes. ¡Sigue así!";
-    } else if (savingPercent >= 15) {
-      return "😊 Buen trabajo. Vas por un buen camino, ¡no aflojes!";
-    } else if (savingPercent >= 1) {
-      return "⚠️ Puedes mejorar tu ahorro este mes. Revisa tus gastos.";
-    } else {
-      return "😟 Este mes no has ahorrado. ¡No te preocupes, el próximo puedes empezar mejor!";
+      if (savingPercent >= 30) {
+        return "🌟 ¡Increíble! Estás ahorrando un gran porcentaje este mes. ¡Sigue así!";
+      } else if (savingPercent >= 15) {
+        return "😊 Buen trabajo. Vas por un buen camino, ¡no aflojes!";
+      } else if (savingPercent >= 1) {
+        return "⚠️ Puedes mejorar tu ahorro este mes. Revisa tus gastos.";
+      } else {
+        return "😟 Este mes no has ahorrado. ¡No te preocupes, el próximo puedes empezar mejor!";
+      }
+    } catch (e) {
+      debugPrint('Error getting mascot message: $e');
+      return "😟 Algo salió mal al calcular tu ahorro.";
     }
   }
 
   int get totalGoodSavingsMonths {
-    final savings = getMonthlySavingsPercentages();
-    return savings.values.where((percent) => percent >= 10).length;
+    try {
+      final savings = getMonthlySavingsPercentages();
+      return savings.values.where((percent) => percent >= 10).length;
+    } catch (e) {
+      debugPrint('Error counting good months: $e');
+      return 0;
+    }
   }
 
-  int get totalGoalsCompleted => _completedGoals.length;
+  int get totalGoalsCompleted {
+    try {
+      return _completedGoals.length;
+    } catch (e) {
+      debugPrint('Error getting total goals completed: $e');
+      return 0;
+    }
+  }
 
   int get consistentMonths {
-    final savings = getMonthlySavingsPercentages();
-    return savings.values.where((percent) => percent > 0 && percent <= 100).length;
+    try {
+      final savings = getMonthlySavingsPercentages();
+      return savings.values.where((percent) => percent > 0 && percent <= 100).length;
+    } catch (e) {
+      debugPrint('Error counting consistent months: $e');
+      return 0;
+    }
   }
 }

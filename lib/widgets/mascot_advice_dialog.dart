@@ -31,15 +31,19 @@ class _MascotAdviceDialogState extends State<MascotAdviceDialog> with SingleTick
   @override
   void initState() {
     super.initState();
-    _controller = AnimationController(
-      vsync: this,
-      duration: const Duration(milliseconds: 800),
-    )..repeat(reverse: true);
-    _animation = Tween(begin: 0.0, end: 10.0).animate(
-      CurvedAnimation(parent: _controller, curve: Curves.easeInOut)
-    );
+    try {
+      _controller = AnimationController(
+        vsync: this,
+        duration: const Duration(milliseconds: 800),
+      )..repeat(reverse: true);
+      _animation = Tween(begin: 0.0, end: 10.0).animate(
+        CurvedAnimation(parent: _controller, curve: Curves.easeInOut)
+      );
 
-    _advice = _advices[Random().nextInt(_advices.length)];
+      _advice = _advices[Random().nextInt(_advices.length)];
+    } catch (e) {
+      debugPrint("Error en initState MascotAdviceDialog: $e");
+    }
   }
 
   @override
@@ -50,10 +54,28 @@ class _MascotAdviceDialogState extends State<MascotAdviceDialog> with SingleTick
 
   @override
   Widget build(BuildContext context) {
-    final now = DateTime.now();
-    final currentMonthYear = "\${now.month.toString().padLeft(2, '0')}-\${now.year}";
-    final walletProvider = context.read<WalletProvider>();
-    final recommendation = walletProvider.getRecommendationForMonth(currentMonthYear);
+    String recommendation = "Sin recomendación.";
+    String imagePath = 'assets/images/mascota_normal.png';
+
+    try {
+      final now = DateTime.now();
+      final currentMonthYear = "${now.month.toString().padLeft(2, '0')}-${now.year}";
+      final walletProvider = context.read<WalletProvider>();
+      recommendation = walletProvider.getRecommendationForMonth(currentMonthYear);
+
+      switch (walletProvider.mascotMood) {
+        case "feliz":
+          imagePath = 'assets/images/mascota_feliz.png';
+          break;
+        case "triste":
+          imagePath = 'assets/images/mascota_triste.png';
+          break;
+        default:
+          imagePath = 'assets/images/mascota_normal.png';
+      }
+    } catch (e) {
+      debugPrint("Error preparando MascotAdviceDialog: $e");
+    }
 
     return Dialog(
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
@@ -70,7 +92,15 @@ class _MascotAdviceDialogState extends State<MascotAdviceDialog> with SingleTick
                   child: child,
                 );
               },
-              child: const Icon(Icons.pets, size: 80, color: Colors.blueAccent),
+              child: Image.asset(
+                imagePath,
+                height: 120,
+                fit: BoxFit.contain,
+                errorBuilder: (context, error, stackTrace) {
+                  debugPrint("Error cargando imagen de mascota: $error");
+                  return const Icon(Icons.pets, size: 80, color: Colors.blueAccent);
+                },
+              ),
             ),
             const SizedBox(height: 16),
             Text(
