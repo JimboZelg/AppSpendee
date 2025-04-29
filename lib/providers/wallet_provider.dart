@@ -4,6 +4,12 @@ import '../models/transaction.dart';
 import '../models/transaction_type.dart';
 import '../models/goal.dart';
 
+enum MascotEvent {
+  none,
+  happyIncome,
+  warningExpense,
+}
+
 class WalletProvider with ChangeNotifier {
   static const String transactionsBoxName = 'transactions';
   static const String goalsBoxName = 'goals';
@@ -12,6 +18,7 @@ class WalletProvider with ChangeNotifier {
   late final Box<Transaction> _transactionsBox;
   late final Box<Goal> _goalsBox;
   late final Box<Goal> _completedGoalsBox;
+
 
   List<Transaction> _transactions = [];
   List<Goal> _goals = [];
@@ -24,6 +31,9 @@ class WalletProvider with ChangeNotifier {
   WalletProvider() {
     _initHive();
   }
+
+  bool isMascotHappy = true; // Estado inicial: feliz
+  int consecutiveExpenses = 0; // Gastos acumulados
 
   Future<void> _initHive() async {
     try {
@@ -123,6 +133,20 @@ class WalletProvider with ChangeNotifier {
     }
   }
 
+  Future<MascotEvent> addTransactionWithFeedback(String description, Transaction transaction) async {
+    final isHighExpense = await addTransaction(description, transaction);
+
+    if (transaction.type == TransactionType.income) {
+      return MascotEvent.happyIncome;
+    } else if (transaction.type == TransactionType.expense) {
+      if (_consecutiveExpenses == 0 || isHighExpense) {
+        return MascotEvent.warningExpense;
+      }
+    }
+
+    return MascotEvent.none;
+  }
+
   Future<bool> addTransaction(String description, Transaction transaction) async {
     try {
       bool isHighExpense = transaction.type == TransactionType.expense && transaction.amount >= 1000;
@@ -152,18 +176,19 @@ class WalletProvider with ChangeNotifier {
 
       _transactions.add(newTransaction);
 
-      // Estado de ánimo
-      if (transaction.type == TransactionType.income) {
-        mascotMood = "feliz";
-        _consecutiveExpenses = 0;
-      } else if (transaction.type == TransactionType.expense) {
-        _consecutiveExpenses++;
-        if (_consecutiveExpenses >= 3) {
-          mascotMood = "triste";
-        } else {
-          mascotMood = "normal";
-        }
+      // Estado de ánimo de la mascota
+    if (transaction.type == TransactionType.income) {
+      mascotMood = "feliz";
+      _consecutiveExpenses = 0;
+    } else if (transaction.type == TransactionType.expense) {
+      _consecutiveExpenses++;
+      if (_consecutiveExpenses >= 3) {
+        mascotMood = "triste";
+        _consecutiveExpenses = 0; // Reiniciar contador
+      } else {
+        mascotMood = "normal";
       }
+    }
 
       await _saveTransactions();
       notifyListeners();

@@ -98,7 +98,7 @@ class _MascotAdviceDialogState extends State<MascotAdviceDialog> with SingleTick
                 fit: BoxFit.contain,
                 errorBuilder: (context, error, stackTrace) {
                   debugPrint("Error cargando imagen de mascota: $error");
-                  return const Icon(Icons.pets, size: 80, color: Colors.blueAccent);
+                  return const Icon(Icons.money, size: 80, color: Colors.blueAccent);
                 },
               ),
             ),

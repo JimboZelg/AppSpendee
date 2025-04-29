@@ -23,7 +23,7 @@ class HomeScreen extends StatefulWidget {
 }
 
 class _HomeScreenState extends State<HomeScreen> {
-  bool showCharts = false; // Estado para mostrar/ocultar gráficas
+  bool showCharts = false;
 
   void _showAddGoalDialog(BuildContext context) {
     final nameController = TextEditingController();
@@ -38,18 +38,13 @@ class _HomeScreenState extends State<HomeScreen> {
           children: [
             TextField(
               controller: nameController,
-              decoration: const InputDecoration(
-                labelText: 'Nombre de la meta',
-              ),
+              decoration: const InputDecoration(labelText: 'Nombre de la meta'),
             ),
             const SizedBox(height: 16),
             TextField(
               controller: amountController,
               keyboardType: const TextInputType.numberWithOptions(decimal: true),
-              decoration: const InputDecoration(
-                labelText: 'Cantidad objetivo',
-                prefixText: '\$',
-              ),
+              decoration: const InputDecoration(labelText: 'Cantidad objetivo', prefixText: '\$'),
             ),
           ],
         ),
@@ -59,15 +54,12 @@ class _HomeScreenState extends State<HomeScreen> {
             child: const Text('Cancelar'),
           ),
           TextButton(
-            onPressed: () {
+            onPressed: () async {
               final name = nameController.text.trim();
               final amount = double.tryParse(amountController.text);
 
               if (name.isNotEmpty && amount != null && amount > 0) {
-                context.read<WalletProvider>().addNewGoal(
-                  name,
-                  amount,
-                );
+                context.read<WalletProvider>().addNewGoal(name, amount);
                 Navigator.pop(context);
               }
             },
@@ -75,6 +67,50 @@ class _HomeScreenState extends State<HomeScreen> {
           ),
         ],
       ),
+    );
+  }
+
+  // ✨ NUEVA FUNCION: Mostrar el diálogo de la mascota
+  void _showMascotDialog(BuildContext context, MascotEvent event) {
+    String title = '';
+    String message = '';
+    String imagePath = 'assets/images/mascota_normal.png';
+
+    if (event == MascotEvent.happyIncome) {
+      title = '¡Buen trabajo!';
+      message = 'Tu mascota está feliz con tu ingreso 🎉 ¡Sigue así!';
+      imagePath = 'assets/images/mascota_feliz.png';
+    } else if (event == MascotEvent.warningExpense) {
+      title = '¡Cuidado!';
+      message = 'Tu mascota está triste 😟. Has tenido varios gastos. ¡Administra mejor tu dinero!';
+      imagePath = 'assets/images/mascota_triste.png';
+    }
+
+    showDialog(
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          title: Text(title),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Image.asset(imagePath, height: 120),
+              const SizedBox(height: 20),
+              Text(
+                message,
+                textAlign: TextAlign.center,
+                style: const TextStyle(fontSize: 16),
+              ),
+            ],
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: const Text('OK'),
+            ),
+          ],
+        );
+      },
     );
   }
 
@@ -95,9 +131,7 @@ class _HomeScreenState extends State<HomeScreen> {
         actions: [
           IconButton(
             icon: Icon(
-              Provider.of<ThemeProvider>(context).isDarkMode
-                  ? Icons.light_mode
-                  : Icons.dark_mode,
+              Provider.of<ThemeProvider>(context).isDarkMode ? Icons.light_mode : Icons.dark_mode,
               color: Colors.white,
             ),
             onPressed: () {
@@ -113,28 +147,19 @@ class _HomeScreenState extends State<HomeScreen> {
           padding: EdgeInsets.zero,
           children: [
             DrawerHeader(
-              decoration: BoxDecoration(
-                color: Theme.of(context).primaryColor,
-              ),
+              decoration: BoxDecoration(color: Theme.of(context).primaryColor),
               child: const Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 mainAxisAlignment: MainAxisAlignment.end,
                 children: [
                   Text(
                     'Spenly',
-                    style: TextStyle(
-                      color: Colors.white,
-                      fontSize: 24,
-                      fontWeight: FontWeight.bold,
-                    ),
+                    style: TextStyle(color: Colors.white, fontSize: 24, fontWeight: FontWeight.bold),
                   ),
                   SizedBox(height: 8),
                   Text(
                     'Gestiona tus finanzas',
-                    style: TextStyle(
-                      color: Colors.white,
-                      fontSize: 16,
-                    ),
+                    style: TextStyle(color: Colors.white, fontSize: 16),
                   ),
                 ],
               ),
@@ -144,12 +169,7 @@ class _HomeScreenState extends State<HomeScreen> {
               title: const Text('Historial'),
               onTap: () {
                 Navigator.pop(context);
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (context) => const HistoryScreen(),
-                  ),
-                );
+                Navigator.push(context, MaterialPageRoute(builder: (context) => const HistoryScreen()));
               },
             ),
             ListTile(
@@ -157,10 +177,7 @@ class _HomeScreenState extends State<HomeScreen> {
               title: const Text('Aprendizaje'),
               onTap: () {
                 Navigator.pop(context);
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(builder: (_) => const LearningScreen()),
-                );
+                Navigator.push(context, MaterialPageRoute(builder: (_) => const LearningScreen()));
               },
             ),
           ],
@@ -171,18 +188,12 @@ class _HomeScreenState extends State<HomeScreen> {
           children: [
             GestureDetector(
               onTap: () {
-                showDialog(
-                  context: context,
-                  builder: (context) => const MascotAdviceDialog(),
-                );
+                showDialog(context: context, builder: (context) => const MascotAdviceDialog());
               },
               child: const SummaryCard(),
             ),
             AchievementsWidget(),
             RecommendationsWidget(),
-
-            
-
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 16.0),
               child: Row(
@@ -205,10 +216,8 @@ class _HomeScreenState extends State<HomeScreen> {
                 ],
               ),
             ),
-
+            const MascotFeedback(),
             const GoalsSection(),
-        
-            // Botón para mostrar/ocultar gráficas
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8),
               child: Align(
@@ -219,21 +228,16 @@ class _HomeScreenState extends State<HomeScreen> {
                       showCharts = !showCharts;
                     });
                   },
-                  icon: Icon(
-                    showCharts ? Icons.keyboard_arrow_up : Icons.bar_chart,
-                  ),
+                  icon: Icon(showCharts ? Icons.keyboard_arrow_up : Icons.bar_chart),
                   label: Text(showCharts ? 'Ocultar Gráficas' : 'Mostrar Gráficas'),
                 ),
               ),
             ),
-
             if (showCharts) ...[
               const BalancePieChart(),
               const MonthlyBarChart(),
             ],
-
             FullReportButton(),
-            const MascotFeedback(),
           ],
         ),
       ),
