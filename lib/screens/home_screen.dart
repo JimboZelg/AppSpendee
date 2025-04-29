@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
+import 'package:spendee/screens/learning/learning_screen.dart';
 import '../widgets/recommendations_widget.dart';
 import 'package:provider/provider.dart';
 import '../providers/wallet_provider.dart';
+import 'package:spendee/providers/theme_provider.dart';
 import '../widgets/summary_card.dart';
 import '../widgets/balance_pie_chart.dart';
 import '../widgets/monthly_bar_chart.dart';
@@ -10,7 +12,7 @@ import '../widgets/transaction_card.dart';
 import '../widgets/goals_section.dart';
 import '../widgets/mascot_feedback.dart';
 import '../widgets/achievements_widget.dart';
-import '../widgets/mascot_advice_dialog.dart'; // 👈 Aseguramos que está el import correcto
+import '../widgets/mascot_advice_dialog.dart';
 import 'history_screen.dart';
 
 class HomeScreen extends StatelessWidget {
@@ -80,13 +82,20 @@ class HomeScreen extends StatelessWidget {
           ),
         ),
         title: const Text(
-          'Spendee',
+          'Spenly',
           style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
         ),
         actions: [
           IconButton(
-            icon: const Icon(Icons.dark_mode, color: Colors.white),
-            onPressed: () {},
+            icon: Icon(
+              Provider.of<ThemeProvider>(context).isDarkMode
+                  ? Icons.light_mode
+                  : Icons.dark_mode,
+              color: Colors.white,
+            ),
+            onPressed: () {
+              Provider.of<ThemeProvider>(context, listen: false).toggleTheme();
+            },
           ),
         ],
         backgroundColor: Theme.of(context).primaryColor,
@@ -105,7 +114,7 @@ class HomeScreen extends StatelessWidget {
                 mainAxisAlignment: MainAxisAlignment.end,
                 children: [
                   Text(
-                    'Spendee',
+                    'Spenly',
                     style: TextStyle(
                       color: Colors.white,
                       fontSize: 24,
@@ -127,7 +136,7 @@ class HomeScreen extends StatelessWidget {
               leading: const Icon(Icons.history),
               title: const Text('Historial'),
               onTap: () {
-                Navigator.pop(context); // Close drawer
+                Navigator.pop(context); 
                 Navigator.push(
                   context,
                   MaterialPageRoute(
@@ -136,13 +145,24 @@ class HomeScreen extends StatelessWidget {
                 );
               },
             ),
+            ListTile(
+  leading: Icon(Icons.school),
+  title: Text('Aprendizaje'),
+  onTap: () {
+    Navigator.pop(context);
+    Navigator.push(
+      context,
+      MaterialPageRoute(builder: (_) => LearningScreen()),
+    );
+  },
+),
+
           ],
         ),
       ),
       body: SingleChildScrollView(
         child: Column(
           children: [
-            // 👇 Hacemos que al tocar el resumen salga la mascota
             GestureDetector(
               onTap: () {
                 showDialog(

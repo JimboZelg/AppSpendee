@@ -7,22 +7,42 @@ class SummaryCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final balance = context.watch<WalletProvider>().totalBalance;
-    
+    final walletProvider = context.watch<WalletProvider>();
+    final totalIncome = walletProvider.totalIncome;
+    final totalExpenses = walletProvider.totalExpenses;
+    final balance = walletProvider.totalBalance;
+
+    final isDarkMode = Theme.of(context).brightness == Brightness.dark;
+
+    // Calcular porcentaje
+    double percentage = 0;
+    if (totalIncome > 0) {
+      percentage = (balance / totalIncome).clamp(0.0, 1.0); // Siempre entre 0 y 1
+    }
+
     return Container(
       margin: const EdgeInsets.all(16),
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: isDarkMode ? Colors.grey[900] : Colors.white,
         borderRadius: BorderRadius.circular(12),
+        boxShadow: [
+          if (!isDarkMode)
+            BoxShadow(
+              color: Colors.black.withOpacity(0.1),
+              blurRadius: 8,
+              offset: const Offset(0, 4),
+            ),
+        ],
       ),
       child: Column(
         children: [
-          const Text(
+          Text(
             'Resumen',
             style: TextStyle(
               fontSize: 20,
               fontWeight: FontWeight.bold,
+              color: isDarkMode ? Colors.white : Colors.black,
             ),
           ),
           const SizedBox(height: 16),
@@ -33,16 +53,20 @@ class SummaryCard extends StatelessWidget {
                 width: 120,
                 height: 120,
                 child: CircularProgressIndicator(
-                  value: 0.7,
+                  value: percentage, // 👈 Ahora dinámico
                   strokeWidth: 8,
-                  backgroundColor: Colors.grey[200],
+                  backgroundColor: isDarkMode ? Colors.grey[800] : Colors.grey[200],
+                  valueColor: AlwaysStoppedAnimation<Color>(
+                    isDarkMode ? Colors.purpleAccent : Colors.blueAccent,
+                  ),
                 ),
               ),
               Text(
                 '\$${balance.toStringAsFixed(2)}',
-                style: const TextStyle(
+                style: TextStyle(
                   fontSize: 24,
                   fontWeight: FontWeight.bold,
+                  color: isDarkMode ? Colors.white : Colors.black,
                 ),
               ),
             ],
