@@ -15,8 +15,15 @@ import '../widgets/achievements_widget.dart';
 import '../widgets/mascot_advice_dialog.dart';
 import 'history_screen.dart';
 
-class HomeScreen extends StatelessWidget {
+class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
+
+  @override
+  State<HomeScreen> createState() => _HomeScreenState();
+}
+
+class _HomeScreenState extends State<HomeScreen> {
+  bool showCharts = false; // Estado para mostrar/ocultar gráficas
 
   void _showAddGoalDialog(BuildContext context) {
     final nameController = TextEditingController();
@@ -136,7 +143,7 @@ class HomeScreen extends StatelessWidget {
               leading: const Icon(Icons.history),
               title: const Text('Historial'),
               onTap: () {
-                Navigator.pop(context); 
+                Navigator.pop(context);
                 Navigator.push(
                   context,
                   MaterialPageRoute(
@@ -146,17 +153,16 @@ class HomeScreen extends StatelessWidget {
               },
             ),
             ListTile(
-  leading: Icon(Icons.school),
-  title: Text('Aprendizaje'),
-  onTap: () {
-    Navigator.pop(context);
-    Navigator.push(
-      context,
-      MaterialPageRoute(builder: (_) => LearningScreen()),
-    );
-  },
-),
-
+              leading: const Icon(Icons.school),
+              title: const Text('Aprendizaje'),
+              onTap: () {
+                Navigator.pop(context);
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (_) => const LearningScreen()),
+                );
+              },
+            ),
           ],
         ),
       ),
@@ -174,6 +180,9 @@ class HomeScreen extends StatelessWidget {
             ),
             AchievementsWidget(),
             RecommendationsWidget(),
+
+            
+
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 16.0),
               child: Row(
@@ -196,9 +205,33 @@ class HomeScreen extends StatelessWidget {
                 ],
               ),
             ),
+
             const GoalsSection(),
-            BalancePieChart(),
-            MonthlyBarChart(),
+        
+            // Botón para mostrar/ocultar gráficas
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8),
+              child: Align(
+                alignment: Alignment.center,
+                child: ElevatedButton.icon(
+                  onPressed: () {
+                    setState(() {
+                      showCharts = !showCharts;
+                    });
+                  },
+                  icon: Icon(
+                    showCharts ? Icons.keyboard_arrow_up : Icons.bar_chart,
+                  ),
+                  label: Text(showCharts ? 'Ocultar Gráficas' : 'Mostrar Gráficas'),
+                ),
+              ),
+            ),
+
+            if (showCharts) ...[
+              const BalancePieChart(),
+              const MonthlyBarChart(),
+            ],
+
             FullReportButton(),
             const MascotFeedback(),
           ],
