@@ -10,16 +10,17 @@ class MascotFeedback extends StatelessWidget {
     try {
       final walletProvider = context.watch<WalletProvider>();
       final mascotMood = walletProvider.mascotMood;
-      final message = walletProvider.getMascotMessage();
+      final savingsMessage = walletProvider.getMascotMessage();
 
-      String imagePath = 'assets/images/mascota_normal.png'; // Default
+      String imagePath = 'assets/images/mascota_normal.png';
+      String moodMessage = "Recuerda seguir revisando tu ahorro.";
 
       if (mascotMood == "feliz") {
         imagePath = 'assets/images/mascota_feliz.png';
+        moodMessage = "¡Estoy muy feliz por tus ingresos! 🎉 ¡Sigue así!";
       } else if (mascotMood == "triste") {
         imagePath = 'assets/images/mascota_triste.png';
-      } else if (mascotMood == "normal") {
-        imagePath = 'assets/images/mascota_normal.png'; // o podrías tener una "neutral_mascot.png" si quieres
+        moodMessage = "Estoy un poco preocupado 😟. Has hecho varios gastos. ¡Intenta ahorrar un poco más!";
       }
 
       return Padding(
@@ -35,18 +36,21 @@ class MascotFeedback extends StatelessWidget {
                   height: 100,
                 ),
                 const SizedBox(height: 12),
+                Text(
+                  moodMessage,
+                  textAlign: TextAlign.center,
+                  style: const TextStyle(fontSize: 16),
+                ),
+                const SizedBox(height: 8),
                 Row(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    const CircleAvatar(
-                      backgroundColor: Colors.blueAccent,
-                      child: Icon(Icons.monetization_on, color: Colors.white),
-                    ),
-                    const SizedBox(width: 12),
+                    const Icon(Icons.monetization_on, color: Colors.blueAccent),
+                    const SizedBox(width: 8),
                     Expanded(
                       child: Text(
-                        message,
-                        style: const TextStyle(fontSize: 16),
+                        savingsMessage,
+                        style: const TextStyle(fontSize: 15),
                       ),
                     ),
                   ],

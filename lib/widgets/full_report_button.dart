@@ -6,7 +6,10 @@ import 'package:pdf/widgets.dart' as pw;
 import 'package:pdf/pdf.dart';
 import 'package:flutter/rendering.dart';
 import 'dart:ui' as ui;
+import 'package:path/path.dart' as p;
 import 'package:path_provider/path_provider.dart';
+import 'package:share_plus/share_plus.dart';
+// import 'package:open_file/open_file.dart';
 import '../providers/wallet_provider.dart';
 import '../models/transaction_type.dart';
 import 'balance_pie_chart.dart';
@@ -109,17 +112,27 @@ class FullReportButton extends StatelessWidget {
         style: ElevatedButton.styleFrom(backgroundColor: Colors.indigo),
         onPressed: () async {
           final pdfBytes = await _generatePdf(context);
+
           final dir = await getExternalStorageDirectory();
-          final path = '${dir!.path}/reporte_spendee.pdf';
-          final file = File(path);
+          final filePath = p.join(dir!.path, 'reporte_spenly.pdf');
+          final file = File(filePath);
           await file.writeAsBytes(pdfBytes);
 
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
-              content: Text('✅ Reporte guardado en: $path'),
+              content: Text('✅ Reporte guardado en: $filePath'),
               backgroundColor: Colors.green,
             ),
           );
+
+          // ✨ Luego ofrecer compartir
+          await Share.shareXFiles(
+            [XFile(filePath)],
+            text: 'Aquí tienes tu reporte financiero generado con Spendee 🧾✨',
+          );
+
+          // Si quieres abrir el PDF directamente:
+          // await OpenFile.open(filePath);
         },
       ),
     );

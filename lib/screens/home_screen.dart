@@ -70,7 +70,6 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
-  // ✨ NUEVA FUNCION: Mostrar el diálogo de la mascota
   void _showMascotDialog(BuildContext context, MascotEvent event) {
     String title = '';
     String message = '';

@@ -14,7 +14,7 @@ class ExerciseQuestionScreen extends StatefulWidget {
 }
 
 class _ExerciseQuestionScreenState extends State<ExerciseQuestionScreen> {
-  int currentStep = 0; // Maneja ejercicios y preguntas combinados
+  int currentStep = 0;
   int points = 0;
 
   @override
@@ -36,7 +36,6 @@ class _ExerciseQuestionScreenState extends State<ExerciseQuestionScreen> {
       int index = currentStep ~/ 2;
 
       if (isExerciseStep) {
-        // Mostrar ejercicio
         return Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
@@ -62,7 +61,6 @@ class _ExerciseQuestionScreenState extends State<ExerciseQuestionScreen> {
           ],
         );
       } else {
-        // Mostrar pregunta
         final question = widget.levelData.questions[index];
         return Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -119,15 +117,12 @@ class _ExerciseQuestionScreenState extends State<ExerciseQuestionScreen> {
             onPressed: () async {
               final box = await Hive.openBox('learningBox');
 
-              // Guardar en Hive
               await box.put('level_${widget.levelData.title}_completed', true);
               await box.put('level_${widget.levelData.title}_points', points);
 
-              // Actualizar LearningProvider
               Provider.of<LearningProvider>(context, listen: false)
                   .completeLevel(levelsData.indexOf(widget.levelData));
 
-              // Mostrar Snackbar de felicitación
               ScaffoldMessenger.of(context).showSnackBar(
                 const SnackBar(
                   content: Text('¡Felicidades! Completaste este nivel 🎉'),

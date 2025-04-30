@@ -110,7 +110,7 @@ class TransactionCard extends StatelessWidget {
                   category: title,
                   date: DateTime.now(),
                   type: TransactionType.expense,
-                  description: 'general', // siempre gastos en cuenta general
+                  description: 'general',
                 );
 
                 final result = await context.read<WalletProvider>().addTransaction('general', transaction);

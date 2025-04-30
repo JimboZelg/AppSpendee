@@ -24,16 +24,15 @@ class WalletProvider with ChangeNotifier {
   List<Goal> _goals = [];
   List<Goal> _completedGoals = [];
 
-  // Estado de ánimo de la mascota
-  String mascotMood = "normal"; // 'normal', 'feliz', 'triste'
-  int _consecutiveExpenses = 0; // contador de gastos consecutivos
+  String mascotMood = "normal";
+  int _consecutiveExpenses = 0;
 
   WalletProvider() {
     _initHive();
   }
 
-  bool isMascotHappy = true; // Estado inicial: feliz
-  int consecutiveExpenses = 0; // Gastos acumulados
+  bool isMascotHappy = true; 
+  int consecutiveExpenses = 0;
 
   Future<void> _initHive() async {
     try {
@@ -176,7 +175,6 @@ class WalletProvider with ChangeNotifier {
 
       _transactions.add(newTransaction);
 
-      // Estado de ánimo de la mascota
     if (transaction.type == TransactionType.income) {
       mascotMood = "feliz";
       _consecutiveExpenses = 0;
@@ -184,7 +182,7 @@ class WalletProvider with ChangeNotifier {
       _consecutiveExpenses++;
       if (_consecutiveExpenses >= 3) {
         mascotMood = "triste";
-        _consecutiveExpenses = 0; // Reiniciar contador
+        _consecutiveExpenses = 0;
       } else {
         mascotMood = "normal";
       }

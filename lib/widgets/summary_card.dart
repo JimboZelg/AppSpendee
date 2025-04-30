@@ -53,7 +53,7 @@ class SummaryCard extends StatelessWidget {
                 width: 120,
                 height: 120,
                 child: CircularProgressIndicator(
-                  value: percentage, // 👈 Ahora dinámico
+                  value: percentage,
                   strokeWidth: 8,
                   backgroundColor: isDarkMode ? Colors.grey[800] : Colors.grey[200],
                   valueColor: AlwaysStoppedAnimation<Color>(
