@@ -1,6 +1,9 @@
+import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
 import 'package:hive_ce_flutter/hive_flutter.dart';
 import 'package:provider/provider.dart';
+import 'package:spendee/comunity/providers/community_provider.dart';
+import 'package:spendee/firebase_options.dart';
 import 'screens/home_screen.dart';
 import 'providers/wallet_provider.dart';
 import 'providers/learning_provider.dart';
@@ -11,6 +14,9 @@ import 'models/goal_adapter.dart';
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await Hive.initFlutter();
+  await Firebase.initializeApp(
+    options: DefaultFirebaseOptions.currentPlatform,
+  );
 
   // Limpia datos anteriores (opcional)
   // await Hive.deleteBoxFromDisk('transactions');
@@ -37,6 +43,7 @@ class MyApp extends StatelessWidget {
         ChangeNotifierProvider(create: (_) => WalletProvider()),
         ChangeNotifierProvider(create: (_) => LearningProvider()..loadProgress()),
         ChangeNotifierProvider(create: (_) => ThemeProvider()),
+        ChangeNotifierProvider(create: (_) => CommunityProvider()),
       ],
       child: Consumer<ThemeProvider>(
         builder: (context, themeProvider, child) {

@@ -15,6 +15,8 @@ import '../widgets/mascot_feedback.dart';
 import '../widgets/achievements_widget.dart';
 import '../widgets/mascot_advice_dialog.dart';
 import 'history_screen.dart';
+import 'package:spendee/comunity/screens/community_home_screen.dart';
+
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -188,6 +190,16 @@ class _HomeScreenState extends State<HomeScreen> {
                 Navigator.push(
                   context,
                   MaterialPageRoute(builder: (_) => const TicketScannerScreen()),
+                );
+              },
+            ),
+            ListTile(
+              leading: const Icon(Icons.people),
+              title: const Text('Comunidad'),
+              onTap: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (_) => const CommunityHomeScreen()),
                 );
               },
             ),
