@@ -24,4 +24,16 @@ class LearningProvider with ChangeNotifier {
     await box.put('level_${id}_completed', true);
     notifyListeners();
   }
+
+  Future<void> resetLearningProgress() async {
+    final box = await Hive.openBox('learningBox');
+
+    // Marcar todos los niveles como no completados
+    for (var level in _levels) {
+      level.completed = false;
+    }
+
+    await box.clear(); // Borra toda la caja Hive relacionada
+    notifyListeners();
+  }
 }

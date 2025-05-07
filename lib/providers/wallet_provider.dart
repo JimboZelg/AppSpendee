@@ -197,6 +197,25 @@ class WalletProvider with ChangeNotifier {
     }
   }
 
+  Future<void> resetAllData() async {
+    try {
+      _transactions.clear();
+      _goals.clear();
+      _completedGoals.clear();
+
+      await _transactionsBox.clear();
+      await _goalsBox.clear();
+      await _completedGoalsBox.clear();
+
+      mascotMood = "normal";
+      _consecutiveExpenses = 0;
+
+      notifyListeners();
+    } catch (e) {
+      debugPrint('Error al borrar todos los datos: $e');
+    }
+  }
+
   Future<void> addToGoal(String goalId, double amount) async {
     try {
       final goalIndex = _goals.indexWhere((g) => g.id == goalId);
@@ -220,7 +239,7 @@ class WalletProvider with ChangeNotifier {
           Transaction(
             id: DateTime.now().toString(),
             amount: amount,
-            category: 'Meta: ${oldGoal.name}',
+            category: "Meta: ${oldGoal.name}",
             date: DateTime.now(),
             type: TransactionType.income,
             description: 'goal',
@@ -373,4 +392,22 @@ class WalletProvider with ChangeNotifier {
       return 0;
     }
   }
+
+  Future<void> addScannedTransaction(double amount) async {
+    try {
+      final transaction = Transaction(
+        id: DateTime.now().toString(),
+        amount: amount,
+        category: 'Ticket',
+        date: DateTime.now(),
+        type: TransactionType.expense,
+        description: 'Gasto escaneado',
+      );
+
+      await addTransaction('ticket', transaction);
+    } catch (e) {
+      debugPrint('Error al agregar transacción desde ticket: $e');
+    }
+  }
+
 }

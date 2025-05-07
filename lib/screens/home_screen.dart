@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:spendee/screens/learning/learning_screen.dart';
+import 'package:spendee/screens/ticket_scanner_screen.dart';
 import '../widgets/recommendations_widget.dart';
 import 'package:provider/provider.dart';
 import '../providers/wallet_provider.dart';
@@ -177,6 +178,17 @@ class _HomeScreenState extends State<HomeScreen> {
               onTap: () {
                 Navigator.pop(context);
                 Navigator.push(context, MaterialPageRoute(builder: (_) => const LearningScreen()));
+              },
+            ),
+            ListTile(
+              leading: const Icon(Icons.receipt_long),
+              title: const Text('Escanear Ticket'),
+              onTap: () {
+                Navigator.pop(context);
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (_) => const TicketScannerScreen()),
+                );
               },
             ),
           ],

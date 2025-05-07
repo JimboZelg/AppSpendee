@@ -37,12 +37,13 @@ class TransactionCard extends StatelessWidget {
                   category: title,
                   date: DateTime.now(),
                   type: TransactionType.income,
-                  description: 'general',
+                  description: description.isNotEmpty ? description : 'general', // ← aquí
                 );
+
                 context.read<WalletProvider>().addTransaction(
-                      'general',
-                      transaction,
-                    );
+                  description.isNotEmpty ? description : 'general', // ← y aquí
+                  transaction,
+                );
                 Navigator.pop(context);
               },
             ),
@@ -110,10 +111,13 @@ class TransactionCard extends StatelessWidget {
                   category: title,
                   date: DateTime.now(),
                   type: TransactionType.expense,
-                  description: 'general',
+                  description: description.isNotEmpty ? description : 'general', // ← aquí
                 );
 
-                final result = await context.read<WalletProvider>().addTransaction('general', transaction);
+                final result = await context.read<WalletProvider>().addTransaction(
+                  description.isNotEmpty ? description : 'general', // ← y aquí también
+                  transaction,
+                );
 
                 if (result == null) {
                   ScaffoldMessenger.of(context).showSnackBar(
